@@ -1,0 +1,134 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URI;
+import java.util.Scanner;
+
+public class Main {
+
+    private static final String API_KEY = "API"; //Colocar sua chave de acesso da API entre as ""
+
+    public static void main(String[] args) {
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (true) {
+                    // Exibe as opções de moedas disponíveis para conversão
+                    System.out.println("----------------------------------------");
+                    System.out.println("\nBem-vindo ao Conversor de Moeda!");
+                    System.out.println("Escolha a moeda de origem:");
+                    System.out.println("1. USD - Dólar Americano");
+                    System.out.println("2. EUR - Euro");
+                    System.out.println("3. GBP - Libra Esterlina");
+                    System.out.println("4. JPY - Iene Japonês");
+                    System.out.println("5. AUD - Dólar Australiano");
+                    System.out.println("6. BRL - Real Brasileiro");
+                    System.out.println("0. Sair");
+                    System.out.print("Digite o código referente a moeda de origem desejada: ");
+
+                    int op = scanner.nextInt();
+                    if (op == 0) {
+                        System.out.println("Desligando...");
+                        break;
+                }
+                System.out.println("\n----------------------------------------");
+
+                String MoedaOrigem = getMoeda(op);
+
+                    //Seleciona a moeda de destino para a conversão'
+                    System.out.println("----------------------------------------");
+                    System.out.println("Escolha a moeda de destino:");
+                    System.out.println("1. USD - Dólar Americano");
+                    System.out.println("2. EUR - Euro");
+                    System.out.println("3. GBP - Libra Esterlina");
+                    System.out.println("4. JPY - Iene Japonês");
+                    System.out.println("5. AUD - Dólar Australiano");
+                    System.out.println("6. BRL - Real Brasileiro");
+                    System.out.println("0. Sair");
+                    System.out.print("Digite o número da moeda de destino: ");
+
+                op = scanner.nextInt();
+                if (op == 0) {
+                    System.out.println("Desligando...");
+                    break;
+                }
+                System.out.println("\n----------------------------------------");
+                String MoedaDestino = getMoeda(op);
+
+                // Obtém a quantidade a ser convertida
+                System.out.print("Digite a quantidade da moeda desejada a ser convertida: ");
+                double Quantidade = scanner.nextDouble();
+
+                // Obtém a taxa de câmbio usando a API
+                double TaxaDeCambio = getTaxaDeCambio(MoedaOrigem, MoedaDestino);
+
+                // Calcula o valor convertido
+                double ValorConvertido = Quantidade * TaxaDeCambio;
+
+                // Exibe o resultado
+                System.out.println(Quantidade + " " + MoedaOrigem + " Equivalem a " + ValorConvertido + " " + MoedaDestino);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String getMoeda(int op) {
+        switch (op) {
+            case 1:
+
+                return "USD";
+
+            case 2:
+
+                return "EUR";
+
+            case 3:
+
+                return "GBP";
+
+            case 4:
+
+                return "JPY";
+
+            case 5:
+
+                return "AUD";
+
+            case 6:
+
+                return "BRL";
+
+            default:
+                throw new IllegalArgumentException("Opção inválida.");
+        }
+    }
+
+    private static double getTaxaDeCambio(String MoedaOrigem, String MoedaDestino) throws IOException {
+        //String urlStr = "https://v6.exchangerate-api.com/v6/API_KEY/latest/" + moedaOrigem;
+        //String urlStr = "https://v6.exchangerate-api.com/v6/"+ API_KEY +"/latest/" + moedaOrigem; //+ "&symbols=" + moedaDestino;
+        URI uri = URI.create("https://v6.exchangerate-api.com/v6/" + API_KEY + "/latest/" + MoedaOrigem);
+        URL url = uri.toURL();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(5000);
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+            String line;
+            StringBuilder response = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+
+            // Extrair a taxa de câmbio do texto da resposta
+            String jsonResponse = response.toString();
+            int startIndex = jsonResponse.indexOf(MoedaDestino);
+            int endIndex = jsonResponse.indexOf(",", startIndex);
+            String taxaStr = jsonResponse.substring(startIndex + 5, endIndex);
+            return Double.parseDouble(taxaStr);
+
+        }
+    }
+}
